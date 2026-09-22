@@ -63,7 +63,7 @@ if(REXGLUE_USE_D3D12)
     )
 endif()
 
-# Platform-specific sources (windowing itself is SDL3, platform-independent)
+# Platform-specific sources
 if(WIN32)
     set(REXUI_PLATFORM_SOURCES
         surface_win.cpp
@@ -71,6 +71,10 @@ if(WIN32)
 elseif(APPLE)
     set(REXUI_PLATFORM_SOURCES
         surface_mac.cpp
+    )
+elseif(REX_PLATFORM_ANDROID)
+    set(REXUI_PLATFORM_SOURCES
+        surface_android.cpp
     )
 else()
     set(REXUI_PLATFORM_SOURCES
@@ -102,10 +106,11 @@ target_include_directories(rexui PUBLIC
     $<BUILD_INTERFACE:${REXGLUE_ROOT}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+
 target_include_directories(rexui PRIVATE
-    ${PROJECT_BINARY_DIR}/include  # Generated macOS Vulkan path data
-    ${REXGLUE_ROOT}/src  # For ui/shaders/bytecode includes
-    ${REXGLUE_ROOT}/thirdparty/stb  # stb_image.h for icon decoding
+    ${PROJECT_BINARY_DIR}/include
+    ${REXGLUE_ROOT}/src
+    ${REXGLUE_ROOT}/thirdparty/stb
 )
 
 target_link_libraries(rexui PUBLIC
@@ -114,6 +119,7 @@ target_link_libraries(rexui PUBLIC
     imgui::imgui
     SDL3::SDL3
 )
+
 target_link_libraries(rexui PRIVATE utf8cpp)
 
 if(REXGLUE_FIDELITYFX_SOURCE_DIR AND EXISTS "${REXGLUE_FIDELITYFX_SOURCE_DIR}/sdk/include")
@@ -125,14 +131,17 @@ if(REXGLUE_FIDELITYFX_SOURCE_DIR AND EXISTS "${REXGLUE_FIDELITYFX_SOURCE_DIR}/sd
 endif()
 
 set(REXUI_HAS_FIDELITYFX_RUNTIME OFF)
+
 if(TARGET amd_fidelityfx_vk)
     target_link_libraries(rexui PRIVATE amd_fidelityfx_vk)
     set(REXUI_HAS_FIDELITYFX_RUNTIME ON)
 endif()
+
 if(TARGET amd_fidelityfx_dx12)
     target_link_libraries(rexui PRIVATE amd_fidelityfx_dx12)
     set(REXUI_HAS_FIDELITYFX_RUNTIME ON)
 endif()
+
 if(REXUI_HAS_FIDELITYFX_RUNTIME)
     target_compile_definitions(rexui PRIVATE REX_HAS_FIDELITYFX_RUNTIME=1)
 endif()
@@ -146,31 +155,43 @@ if(REXGLUE_USE_VULKAN)
 endif()
 
 # Platform-specific dependencies
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
     find_package(PkgConfig REQUIRED)
+
     pkg_check_modules(X11_XCB REQUIRED x11-xcb)
-    # Required, not optional: vulkan/api.h pulls in <wayland-client.h> on every
-    # Linux build.
+
+    # Required, not optional: vulkan/api.h pulls in <wayland-client.h>
+    # on every Linux build.
     pkg_check_modules(WAYLAND REQUIRED wayland-client)
 
     target_include_directories(rexui PUBLIC
         ${X11_XCB_INCLUDE_DIRS}
         ${WAYLAND_INCLUDE_DIRS}
     )
+
     target_link_libraries(rexui PUBLIC
         ${X11_XCB_LIBRARIES}
         ${WAYLAND_LIBRARIES}
     )
+
 elseif(APPLE)
-    target_link_libraries(rexui PRIVATE "-framework CoreFoundation")
+
+    target_link_libraries(rexui PRIVATE
+        "-framework CoreFoundation"
+    )
+
 endif()
 
 if(WIN32)
-    target_link_libraries(rexui PUBLIC dxgi dxguid)
+    target_link_libraries(rexui PUBLIC
+        dxgi
+        dxguid
+    )
 endif()
 
 # D3D12 backend dependencies
 if(REXGLUE_USE_D3D12)
-    target_link_libraries(rexui PUBLIC dxc-headers)
+    target_link_libraries(rexui PUBLIC
+        dxc-headers
+    )
 endif()
-
