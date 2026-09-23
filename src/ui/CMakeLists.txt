@@ -72,7 +72,7 @@ elseif(APPLE)
     set(REXUI_PLATFORM_SOURCES
         surface_mac.cpp
     )
-elseif(REX_PLATFORM_ANDROID)
+elseif(ANDROID)
     set(REXUI_PLATFORM_SOURCES
         surface_android.cpp
     )
@@ -101,7 +101,6 @@ add_library(rexui OBJECT ${REXUI_SOURCES})
 add_library(rex::ui ALIAS rexui)
 
 rex_target_pch(rexui <rex/math.h>)
-
 target_include_directories(rexui PUBLIC
     $<BUILD_INTERFACE:${REXGLUE_ROOT}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
