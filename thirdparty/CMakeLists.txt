@@ -290,7 +290,7 @@ set(SDL_DUMMYVIDEO OFF CACHE BOOL "" FORCE)
 
 # Linux video and audio backends. Both video drivers are always built so the
 # one in use stays a runtime choice.
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(SDL_X11               ON  CACHE BOOL "" FORCE)
     set(SDL_WAYLAND           ON  CACHE BOOL "" FORCE)
     set(SDL_ALSA              ON  CACHE BOOL "" FORCE)
@@ -457,7 +457,6 @@ add_library(libavutil STATIC
     ${FFMPEG_DIR}/libavutil/avstring.c
     ${FFMPEG_DIR}/libavutil/avsscanf.c
     ${FFMPEG_DIR}/libavutil/base64.c
-    ${FFMPEG_DIR}/libavutil/blowfish.c
     ${FFMPEG_DIR}/libavutil/bprint.c
     ${FFMPEG_DIR}/libavutil/buffer.c
     ${FFMPEG_DIR}/libavutil/cast5.c
