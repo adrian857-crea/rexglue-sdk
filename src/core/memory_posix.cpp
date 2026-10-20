@@ -56,15 +56,6 @@
 // #include "xenia/base/main_android.h"
 #endif  // REX_PLATFORM_ANDROID
 
-#include <dlfcn.h>
-#include <sys/ioctl.h>
-
-#include <linux/ashmem.h>
-
-// TODO(tomc): Android or maybe na. idk
-// #include "xenia/base/main_android.h"
-#endif
-
 namespace rex {
 namespace memory {
 
