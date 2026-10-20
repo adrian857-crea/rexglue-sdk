@@ -1,3 +1,4 @@
+
 # rexcore - Core utilities library
 # Foundation types, data structures, and threading primitives
 
@@ -76,6 +77,14 @@ elseif(UNIX)
     )
 endif()
 
+# Android ARM64 fiber context-switching backend
+if(ANDROID)
+    target_sources(rexcore PRIVATE
+        fiber_android.cpp
+        fiber_context_arm64.S
+    )
+endif()
+
 # Xenos data-format layer (stateless; headers under include/rex/graphics/).
 # The GPU emulation consuming it lives in the rexgpu-xenos plugin.
 target_sources(rexcore PRIVATE
@@ -139,3 +148,4 @@ if(REXGLUE_ENABLE_PERF_COUNTERS)
     target_compile_definitions(rexcore PUBLIC
         $<$<NOT:$<CONFIG:Release>>:REXGLUE_ENABLE_PERF_COUNTERS>)
 endif()
+
