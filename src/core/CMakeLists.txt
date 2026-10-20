@@ -104,6 +104,10 @@ elseif(UNIX)
     target_link_libraries(rexcore PRIVATE pthread rt dl)
 endif()
 
+if(ANDROID)
+    target_link_libraries(rexcore PRIVATE android)
+endif()
+
 target_link_libraries(rexcore
     PUBLIC
         fmt::fmt
