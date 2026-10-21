@@ -15,6 +15,13 @@ project(ReXGlue
     DESCRIPTION "Xbox 360 Recompilation SDK"
 )
 
+# Android NDK: provide the missing default ASM compilation rule.
+if(ANDROID AND NOT CMAKE_ASM_COMPILE_OBJECT)
+    set(CMAKE_ASM_COMPILE_OBJECT
+        "<CMAKE_ASM_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    )
+endif()
+
 # Floor only: bump MAJOR.MINOR for API changes. Patch is derived from git tags
 # in cmake/rex_version.cmake. See docs/RELEASING.md.
 
