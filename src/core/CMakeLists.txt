@@ -80,6 +80,7 @@ endif()
 # Android ARM64 fiber context-switching backend
 if(ANDROID)
     target_sources(rexcore PRIVATE
+        filesystem_android.cpp
         fiber_android.cpp
         fiber_context_arm64.S
     )
