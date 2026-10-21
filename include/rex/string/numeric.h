@@ -26,7 +26,8 @@
 #include <rex/string/utf8.h>
 #include <rex/vec128.h>
 
-#if REX_PLATFORM_MAC
+#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID || \
+    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
 #include <locale.h>
 #endif
 
@@ -55,8 +56,8 @@ inline std::string to_hex_string(double value) {
 }
 
 inline std::string to_hex_string(const vec128_t& value) {
-  return fmt::format("[{:08X} {:08X} {:08X} {:08X}]", value.u32[0], value.u32[1], value.u32[2],
-                     value.u32[3]);
+  return fmt::format("[{:08X} {:08X} {:08X} {:08X}]", value.u32[0],
+                     value.u32[1], value.u32[2], value.u32[3]);
 }
 
 template <typename T>
@@ -86,6 +87,7 @@ inline T ifs(const std::string_view value, bool force_hex) {
   std::string_view range = value;
   bool is_hex = force_hex;
   bool is_negative = false;
+
   if (rex::string::utf8_starts_with(range, "-")) {
     is_negative = true;
     range = range.substr(1);
@@ -98,12 +100,17 @@ inline T ifs(const std::string_view value, bool force_hex) {
     is_hex = true;
     range = range.substr(0, range.length() - 1);
   }
+
   T result;
   if (is_hex) {
     base = 16;
   }
+
   // TODO(gibbed): do something more with errors?
-  auto [p, error] = std::from_chars(range.data(), range.data() + range.size(), result, base);
+  auto [p, error] =
+      std::from_chars(range.data(), range.data() + range.size(), result, base);
+  (void)p;
+
   if (error != std::errc()) {
     assert_always();
     return T();
@@ -114,18 +121,18 @@ inline T ifs(const std::string_view value, bool force_hex) {
   return result;
 }
 
-#if REX_PLATFORM_MAC || (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
+#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID || \
+    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
 template <typename T>
-inline std::from_chars_result portable_float_from_chars(const char* first, const char* last,
+inline std::from_chars_result portable_float_from_chars(const char* first,
+                                                        const char* last,
                                                         T& value) {
   static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
 
-  // AppleClang's libc++ does not provide floating-point std::from_chars on all
-  // supported SDK versions. Match from_chars semantics with a C-locale parser:
-  // no leading whitespace or '+', no global locale dependency, and distinct
-  // invalid-input and range errors.
-  if (first == last || *first == '+' || *first == ' ' || *first == '\f' || *first == '\n' ||
-      *first == '\r' || *first == '\t' || *first == '\v') {
+  // Use a C-locale parser on platforms where floating-point
+  // std::from_chars is unavailable or unsuitable.
+  if (first == last || *first == '+' || *first == ' ' || *first == '\f' ||
+      *first == '\n' || *first == '\r' || *first == '\t' || *first == '\v') {
     return {first, std::errc::invalid_argument};
   }
 
@@ -134,10 +141,12 @@ inline std::from_chars_result portable_float_from_chars(const char* first, const
   if (len >= sizeof(buffer)) {
     return {first, std::errc::result_out_of_range};
   }
+
   std::memcpy(buffer, first, len);
   buffer[len] = '\0';
 
-  static locale_t c_numeric_locale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+  static locale_t c_numeric_locale =
+      newlocale(LC_NUMERIC_MASK, "C", nullptr);
   if (!c_numeric_locale) {
     return {first, std::errc::invalid_argument};
   }
@@ -145,11 +154,13 @@ inline std::from_chars_result portable_float_from_chars(const char* first, const
   char* end = nullptr;
   errno = 0;
   T parsed_value;
+
   if constexpr (std::is_same_v<T, float>) {
     parsed_value = strtof_l(buffer, &end, c_numeric_locale);
   } else {
     parsed_value = strtod_l(buffer, &end, c_numeric_locale);
   }
+
   if (end == buffer) {
     return {first, std::errc::invalid_argument};
   }
@@ -166,9 +177,11 @@ inline std::from_chars_result portable_float_from_chars(const char* first, const
 template <typename T, typename PUN>
 inline T fpfs(const std::string_view value, bool force_hex) {
   static_assert(sizeof(T) == sizeof(PUN));
+
   std::string_view range = value;
   bool is_hex = force_hex;
   bool is_negative = false;
+
   if (rex::string::utf8_starts_with(range, "-")) {
     is_negative = true;
     range = range.substr(1);
@@ -181,6 +194,7 @@ inline T fpfs(const std::string_view value, bool force_hex) {
     is_hex = true;
     range = range.substr(0, range.length() - 1);
   }
+
   T result;
   if (is_hex) {
     PUN pun = from_string<PUN>(range, true);
@@ -189,12 +203,19 @@ inline T fpfs(const std::string_view value, bool force_hex) {
     }
     std::memcpy(&result, &pun, sizeof(PUN));
   } else {
-#if REX_PLATFORM_MAC || (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
-    auto [p, error] = portable_float_from_chars(range.data(), range.data() + range.size(), result);
+#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID || \
+    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
+    auto [p, error] =
+        portable_float_from_chars(range.data(), range.data() + range.size(),
+                                  result);
+    (void)p;
 #else
-    auto [p, error] = std::from_chars(range.data(), range.data() + range.size(), result,
-                                      std::chars_format::general);
+    auto [p, error] = std::from_chars(
+        range.data(), range.data() + range.size(), result,
+        std::chars_format::general);
+    (void)p;
 #endif
+
     // TODO(gibbed): do something more with errors?
     if (error != std::errc()) {
       assert_always();
@@ -209,9 +230,7 @@ inline T fpfs(const std::string_view value, bool force_hex) {
 
 }  // namespace detail
 
-// The single definition of what counts as a true boolean string. Config files,
-// the command line, cvar change callbacks and the settings UI all funnel
-// through here so a value accepted in one place can't be rejected in another.
+// The single definition of what counts as a true boolean string.
 template <>
 inline bool from_string<bool>(const std::string_view value, bool force_hex) {
   (void)force_hex;
@@ -269,14 +288,17 @@ inline double from_string<double>(const std::string_view value, bool force_hex) 
 }
 
 template <>
-inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_hex) {
+inline vec128_t from_string<vec128_t>(const std::string_view value,
+                                      bool force_hex) {
   if (!value.size()) {
     return vec128_t();
   }
+
   vec128_t v;
   auto p = value.data();
   auto end = value.data() + value.size();
   bool is_hex = force_hex;
+
   if (p != end && *p == '[') {
     is_hex = true;
     ++p;
@@ -287,10 +309,12 @@ inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_h
     // Assume hex?
     is_hex = true;
   }
+
   if (p == end) {
     assert_always();
     return vec128_t();
   }
+
   if (is_hex) {
     for (size_t i = 0; i < 4; i++) {
       while (p != end && (*p == ' ' || *p == ',')) {
@@ -300,6 +324,7 @@ inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_h
         assert_always();
         return vec128_t();
       }
+
       auto result = std::from_chars(p, end, v.u32[i], 16);
       if (result.ec != std::errc()) {
         assert_always();
@@ -316,11 +341,15 @@ inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_h
         assert_always();
         return vec128_t();
       }
-#if REX_PLATFORM_MAC || (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
+
+#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID || \
+    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
       auto result = detail::portable_float_from_chars(p, end, v.f32[i]);
 #else
-      auto result = std::from_chars(p, end, v.f32[i], std::chars_format::general);
+      auto result =
+          std::from_chars(p, end, v.f32[i], std::chars_format::general);
 #endif
+
       if (result.ec != std::errc()) {
         assert_always();
         return vec128_t();
@@ -328,7 +357,9 @@ inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_h
       p = result.ptr;
     }
   }
+
   return v;
 }
 
 }  // namespace rex::string
+
