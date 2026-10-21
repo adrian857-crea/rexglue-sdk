@@ -117,9 +117,7 @@ using XSystemClock = detail::NtSystemClock<detail::Domain::Guest>;
 namespace std::chrono {
 
 
-#if defined(__APPLE__) || defined(__ANDROID__) || \ 
-    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 
-200000)
+#if defined(__APPLE__) || defined(__ANDROID__) || (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000)
 // Apple and Android libc++ versions may not expose
 // clock_time_conversion or clock_cast.
 template <class, class>
