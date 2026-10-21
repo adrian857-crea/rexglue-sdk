@@ -109,7 +109,7 @@ target_include_directories(rexcore PRIVATE
 
 if(APPLE)
     target_link_libraries(rexcore PRIVATE pthread)
-elseif(UNIX)
+elseif(UNIX AND NOT ANDROID)
     target_link_libraries(rexcore PRIVATE pthread rt dl)
 endif()
 
