@@ -84,6 +84,8 @@ if(ANDROID)
         fiber_android.cpp
         fiber_context_arm64.S
     )
+
+    target_link_libraries(rexcore PRIVATE SDL3::SDL3)
 endif()
 
 # Xenos data-format layer (stateless; headers under include/rex/graphics/).
