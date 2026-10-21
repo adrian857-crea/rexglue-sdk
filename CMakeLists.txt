@@ -1,7 +1,9 @@
 # ReXGlue SDK - Xbox 360 Recompilation Toolkit
 cmake_minimum_required(VERSION 3.25)
 
-if(APPLE)
+if(ANDROID)
+    set(REXGLUE_LANGUAGES C CXX ASM)
+elseif(APPLE)
     set(REXGLUE_LANGUAGES C CXX OBJC OBJCXX)
 else()
     set(REXGLUE_LANGUAGES C CXX)
