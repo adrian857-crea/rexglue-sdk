@@ -21,11 +21,10 @@ add_library(rex::audio ALIAS rexaudio)
 # Enable SSSE3 for the host-native Linux x86-64 build only.
 # This is required by _mm_shuffle_epi8 in xma_context.cpp.
 # Do not apply this x86-specific option to Android ARM64.
+# Enable SSSE3 for the host-native Linux x86-64 build only.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
-    set_source_files_properties(xma_context.cpp PROPERTIES
-        COMPILE_OPTIONS "-mssse3"
-    )
+    target_compile_options(rexaudio PRIVATE -mssse3)
 endif()
 
 rex_target_pch(rexaudio
