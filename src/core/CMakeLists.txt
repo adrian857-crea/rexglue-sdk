@@ -25,6 +25,16 @@ add_library(rexcore OBJECT
 )
 add_library(rex::core ALIAS rexcore)
 
+
+# Enable SSSE3 for AMD64 memory routines on Linux only.
+# Do not apply this x86-specific option to Android ARM64.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+   AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    set_source_files_properties(memory.cpp PROPERTIES
+        COMPILE_OPTIONS "-mssse3")
+endif()
+
+
 if(APPLE)
     # Apple's libc++ still gates std::jthread/std::stop_token behind the
     # experimental-library feature flag. Only timer_queue.cpp uses them, and
