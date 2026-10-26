@@ -153,8 +153,9 @@ if(REXGLUE_USE_VULKAN)
     )
 endif()
 
+
 # Platform-specific dependencies
-if(UNIX AND NOT APPLE AND NOT ANDROID)
+if(UNIX AND NOT APPLE AND NOT ANDROID AND NOT PS5)
     find_package(PkgConfig REQUIRED)
 
     pkg_check_modules(X11_XCB REQUIRED x11-xcb)
@@ -174,12 +175,11 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     )
 
 elseif(APPLE)
-
     target_link_libraries(rexui PRIVATE
         "-framework CoreFoundation"
     )
-
 endif()
+
 
 if(WIN32)
     target_link_libraries(rexui PUBLIC
