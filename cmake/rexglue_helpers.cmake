@@ -77,9 +77,18 @@ endfunction()
 function(rexglue_configure_target target_name)
     cmake_parse_arguments(ARG "" "" "GPU_PLUGINS" ${ARGN})
 
-    target_sources(${target_name} PRIVATE
-        ${REXGLUE_SHARE_DIR}/windowed_app_main_sdl.cpp
-        ${REXGLUE_SHARE_DIR}/rex_app.cpp)
+    
+    # Android supplies its own SDL entry point through src/android_main.cpp.
+    # Desktop platforms use the standard ReXGlue SDL entry point.
+    if(ANDROID)
+        target_sources(${target_name} PRIVATE
+            ${REXGLUE_SHARE_DIR}/rex_app.cpp)
+    else()
+        target_sources(${target_name} PRIVATE
+            ${REXGLUE_SHARE_DIR}/windowed_app_main_sdl.cpp
+            ${REXGLUE_SHARE_DIR}/rex_app.cpp)
+    endif()
+
 
     target_compile_definitions(${target_name} PRIVATE
         REXGLUE_BUILD_CONFIG="$<CONFIG>")
