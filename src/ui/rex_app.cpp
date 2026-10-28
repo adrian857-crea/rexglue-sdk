@@ -144,7 +144,12 @@ bool ReXApp::SetupEnvironment() {
 
   PathConfig path_config{game_dir,  user_dir,     update_dir,
                          cache_dir, metadata_dir, exe_dir / (std::string(GetName()) + ".toml")};
-  OnConfigurePaths(path_config);
+    OnConfigurePaths(path_config);
+
+  // Keep log paths aligned with Android app-private storage.
+  user_dir = path_config.user_data_root;
+  cache_dir = path_config.cache_root;
+
   game_data_root_ = path_config.game_data_root;
   user_data_root_ = path_config.user_data_root;
   update_data_root_ = path_config.update_data_root;
