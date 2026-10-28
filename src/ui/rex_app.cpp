@@ -166,10 +166,18 @@ bool ReXApp::SetupEnvironment() {
   auto category_levels = rex::ParseCategoryLevelsFromConfig(config_path_);
   auto log_config = rex::BuildLogConfig(log_file_cvar.empty() ? nullptr : log_file_cvar.c_str(),
                                         log_level_str, category_levels);
-  if (log_file_cvar.empty()) {
-    log_config.app_name = std::string(GetName());
-    log_config.log_dir = (exe_dir / "logs").string();
-  }
+  
+if (log_file_cvar.empty()) {
+  log_config.app_name = std::string(GetName());
+
+#if REX_PLATFORM_ANDROID
+  // Android: use a pasta gravável dos dados do aplicativo.
+  log_config.log_dir = (user_dir / "logs").string();
+#else
+  // Desktop: mantenha os logs junto ao executável.
+  log_config.log_dir = (exe_dir / "logs").string();
+#endif
+}
 
   rex::InitLogging(log_config);
   rex::RegisterLogLevelCallback();
